@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real Estate AI Assistant</title>
+</head>
+<body>
+  <h1>Welcome to Our Real Estate Website</h1>
+  <p>This is a sample site with a powerful AI chatbot assistant. Ask anything using the chat button below!</p>
+
+  <!-- START: AI Chatbot -->
+  <style>
+    #chatbot-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      max-height: 520px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 14px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 9999;
+      font-family: sans-serif;
+    }
+
+    #chatbot-header {
+      background: #007bff;
+      color: white;
+      padding: 12px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    #chatbot-body {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+
+    #chatbot-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+
+    #chatbot-input input {
+      flex: 1;
+      border: none;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    #chatbot-input button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+
+    #chatbot-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #007bff;
+      color: white;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+      z-index: 9998;
+    }
+
+    .whatsapp-button {
+      background-color: #25D366;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: inline-block;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+
+  <button id="chatbot-toggle">💬</button>
+
+  <div id="chatbot-container">
+    <div id="chatbot-header">Real Estate AI Assistant</div>
+    <div id="chatbot-body">
+      <div><strong>AI:</strong> Hi there! 👋 I’m your real estate assistant. Ask me anything.</div>
+    </div>
+    <div id="chatbot-input">
+      <input type="text" id="chatbot-user-input" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById("chatbot-toggle");
+    const chatbot = document.getElementById("chatbot-container");
+    const body = document.getElementById("chatbot-body");
+
+    let leadCaptured = false;
+    let userName = "";
+    let userEmail = "";
+
+    toggleBtn.onclick = () => {
+      chatbot.style.display = chatbot.style.display === "flex" ? "none" : "flex";
+    };
+
+    async function sendMessage() {
+      const input = document.getElementById("chatbot-user-input");
+      const message = input.value.trim();
+      if (!message) return;
+
+      body.innerHTML += `<div><strong>You:</strong> ${message}</div>`;
+      body.scrollTop = body.scrollHeight;
+      input.value = "";
+
+      // WhatsApp trigger
+      if (/human|agent|contact/i.test(message)) {
+        body.innerHTML += `<div><strong>AI:</strong> You can reach our live agent via WhatsApp below.<br><a class="whatsapp-button" href="https://wa.me/YOURNUMBER" target="_blank">💬 Chat on WhatsApp</a></div>`;
+        body.scrollTop = body.scrollHeight;
+        return;
+      }
+
+      // Pricing trigger
+      if (/price|plan|subscribe|trial/i.test(message) && !leadCaptured) {
+        await getLeadInfo();
+        return;
+      }
+
+      const reply = await getBotResponse(message);
+      body.innerHTML += `<div><strong>AI:</strong> ${reply}</div>`;
+      body.scrollTop = body.scrollHeight;
+    }
+
+    async function getBotResponse(message) {
+      try {
+        const res = await fetch("https://ai-chatbot-api-qanita.replit.app/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        return data.reply;
+      } catch (err) {
+        return "Sorry, I'm having trouble connecting right now.";
+      }
+    }
+
+    async function getLeadInfo() {
+      const name = prompt("Before I show you our pricing plans, may I know your name?");
+      if (!name) return;
+
+      const email = prompt("Thanks, " + name + "! Lastly, your email?");
+      if (!email || !email.includes("@")) {
+        alert("Please enter a valid email address.");
+        return;
+      }
+
+      leadCaptured = true;
+      userName = name;
+      userEmail = email;
+
+      // Send to webhook
+      try {
+        await fetch("YOUR_WEBHOOK_URL", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: userName, email: userEmail })
+        });
+      } catch (err) {
+        console.log("Failed to send lead to webhook.");
+      }
+
+      body.innerHTML += `<div><strong>AI:</strong> Thanks ${userName}! Here's our pricing:</div>`;
+      body.innerHTML += `
+        <ul>
+          <li><strong>Basic:</strong> Free – 24/7 general responses</li>
+          <li><strong>Pro:</strong> $29/mo – Lead capture + CRM sync</li>
+          <li><strong>Premium:</strong> $59/mo – Full AI + custom integrations</li>
+        </ul>
+        Would you like to start with a free trial?`;
+
+      body.scrollTop = body.scrollHeight;
+    }
+  </script>
+  <!-- END: AI Chatbot -->
+</body>
+</html>
